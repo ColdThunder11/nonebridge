@@ -4,7 +4,7 @@ A adapter event bridge for nonebot2 makes plugins run at different adapter witho
 ## 还在开发中请勿使用
 女生自用插件，目前仅支持让为onebotv11编写的插件运行在自己写的[nonebot-adapter-telegram](https://github.com/ColdThunder11/nonebot-adapter-telegram)上，仅会支持有限的消息类型和API模拟   
 ## 支持的类型
-- [√] 文字
+- [x] 文字
 - [ ] 图片
 
 ## 支持的额外API
