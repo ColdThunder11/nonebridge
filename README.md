@@ -11,4 +11,4 @@ A adapter event bridge for nonebot2 makes plugins run at different adapter witho
 ~~还没有~~
 
 ## 使用方法
-在bot.py紧随nonebot之后导入nonebridge，必须在任何adapter导入之前导入nonebridge
+同时安装并两个adapter，在bot.py紧随nonebot之后导入nonebridge，必须在任何adapter导入之前导入nonebridge，需要同时注册两个Adapter才能正常运行
