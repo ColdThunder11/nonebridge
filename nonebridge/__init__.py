@@ -16,7 +16,7 @@ loaded_adapter: List = []
 
 async def run_handle_event_func_async(*a, **b):
     b["origin_func"] = orig_handle_event_func
-    await NonebotHooks.handle_event_hook(*a, **b)
+    return await NonebotHooks.handle_event_hook(*a, **b)
 orig_handle_event_func = nonebot.message.handle_event
 nonebot.message.handle_event = run_handle_event_func_async
 
@@ -135,7 +135,6 @@ class NonebotHooks:
                 if isinstance(event, TgGroupMessageEvent) or isinstance(event, TgPrivateMessageEvent):
                     ob11_event = TgEvent2Ob11(event)
                     if ob11_event:
-                        # build bot
                         if adapter := get_adapter("OneBot V11"):
                             ob11_bot = Ob11Bot(adapter, "0")
                             ob11_bot.raw_event = event  # pass origin event to make adapter process easily
@@ -143,6 +142,8 @@ class NonebotHooks:
                             await nonebot.message.handle_event(ob11_bot, ob11_event)
                             bot._alread_run_matcher = ob11_bot._alread_run_matcher
         await origin_func(bot, event)
+        if hasattr(bot, "_alread_run_matcher"):
+            bot._alread_run_matcher = []
 
 
 class TgHooks:
@@ -181,14 +182,45 @@ class Ob11Hooks:
                         if hasattr(self, "raw_event"):
                             await tg_bot._process_send_message(self.raw_event, Ob11Message2Tg(data["message"]), False, False)
                         return
+            elif api == "get_group_info":
+                if adapter := get_adapter("Telegram"):
+                    tg_bot = TgBot(adapter, "nonebridge")
+                    if hasattr(self, "raw_event"):
+                        tg_chat_info = await tg_bot.call_api("getChat", chat_id=data["group_id"])
+                        return json.loads(json.dumps({
+                            "group_id": tg_chat_info["id"],
+                            "group_name": tg_chat_info["title"],
+                            "member_count": await tg_bot.call_api("getChatMemberCount", chat_id=data["group_id"]),
+                            "max_member_count": 100000
+                        }))
+            elif api == "get_group_member_list":  # Telegram only offer API to get admins of group, it seems no way to get other member's info unless record chat history
+                if adapter := get_adapter("Telegram"):
+                    tg_bot = TgBot(adapter, "nonebridge")
+                    if hasattr(self, "raw_event"):
+                        tg_group_admins_info = await tg_bot.call_api("getChatAdministrators", chat_id=data["group_id"])
+                        member_list = []
+                        for admin_info in tg_group_admins_info:
+                            member_list.append({
+                                "group_id": data["group_id"],
+                                "user_id": admin_info["user"]["id"],
+                                "nickname": admin_info["user"]["first_name"],
+                                "card": admin_info["user"]["first_name"],
+                                "sex": "unknown",
+                                "role": "admin"
+
+                            })
+                        return json.loads(json.dumps(member_list))
             elif api == "get_group_member_info":
                 if adapter := get_adapter("Telegram"):
                     tg_bot = TgBot(adapter, "nonebridge")
                     member = await tg_bot.call_api("getChatMember", chat_id=data["group_id"], user_id=data["user_id"])
                     return json.loads(json.dumps({
+                        "group_id": data["group_id"],
+                        "user_id": member["user"]["id"],
                         "nickname": member["user"]["first_name"],
                         "card": member["user"]["first_name"],
-                        "sex": 0
+                        "sex": "unknown",
+                        "role": "member"
                     }))
         return await origin_func(self, api, **data)
 
@@ -218,11 +250,10 @@ def install_hook(orig_func: Callable, hook_func: Callable):
         orig_func = run_hook
 
 
-#install_hook(handle_event, NonebotHooks.handle_event_hook)
 if "Telegram" in loaded_adapter_names:
     async def run_tg_call_api_func_async(*a, **b):
         b["origin_func"] = orig_tg_call_api_func
-        await TgHooks.call_api_hook(*a, **b)
+        return await TgHooks.call_api_hook(*a, **b)
     orig_tg_call_api_func = TgBot.call_api
     TgBot.call_api = run_tg_call_api_func_async
 
@@ -231,20 +262,18 @@ if "Telegram" in loaded_adapter_names:
         TgHooks.adapter_init(*a, **b)
     orig_tg_adapter_init_func = TgAdapter.__init__
     TgAdapter.__init__ = run_tg_adapter_init_func_async
-    #install_hook(TgAdapter.__init__, TgHooks.adapter_init)
+
 if "Onebot11" in loaded_adapter_names:
     async def run_ob11_call_api_func_async(*a, **b):
         b["origin_func"] = orig_ob11_call_api_func
-        await Ob11Hooks.call_api_hook(*a, **b)
+        return await Ob11Hooks.call_api_hook(*a, **b)
     orig_ob11_call_api_func = Ob11Bot.call_api
     Ob11Bot.call_api = run_ob11_call_api_func_async
-    #install_hook(Ob11Bot.call_api, Ob11Hooks.call_api_hook)
 
     def run_ob11_adapter_init_func_async(*a, **b):
         b["origin_func"] = orig_ob11_adapter_init_func
-        Ob11Hooks.adapter_init(*a, **b)
+        return Ob11Hooks.adapter_init(*a, **b)
     orig_ob11_adapter_init_func = Ob11Adapter.__init__
     Ob11Adapter.__init__ = run_ob11_adapter_init_func_async
 
-    #install_hook(Ob11Adapter.__init__, Ob11Hooks.adapter_init)
 print("Nonebridge hooks install success")

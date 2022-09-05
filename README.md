@@ -1,9 +1,9 @@
 # nonebridge
 A adapter event bridge for nonebot2 makes plugins run at different adapter without any modify   
-~~一个让你能够在不修改插件的情况下使其运行在不同adapter中的魔法bridge~~
+一个让你能够在不修改插件的情况下使其运行在不同adapter中的魔法bridge
 ## 还在开发中请勿使用
 女生自用插件，目前仅支持让为onebotv11编写的插件运行在自己写的[nonebot-adapter-telegram](https://github.com/ColdThunder11/nonebot-adapter-telegram)上，仅会支持有限的消息类型和API模拟   
-目前仅支持群聊消息触发，不支持私聊和主动发送消息
+目前不支持主动发送消息和向非事件触发的聊天发送消息
 ## 支持的接收类型
 - [x] 纯文字(MessageSegment.text)
 - [ ] 图片
@@ -13,7 +13,11 @@ A adapter event bridge for nonebot2 makes plugins run at different adapter witho
 - [x] 图片(MessageSegment.image)
 
 ## 支持的额外API
-~~还没有~~
+| Onebot v11 API        | 对应的Telegarm API                                                       |
+| --------------------- | ------------------------------------------------------------------------ |
+| get_group_info        | getChat和getChatMemberCount                                              |
+| get_group_member_list | getChatAdministrators(由于tg并没有提供相关API，仅能够直接获取管理员信息) |
+| get_group_member_info | getChatMember                                                            |
 
 ## 使用方法
 同时安装并两个adapter，在bot.py紧随nonebot之后导入nonebridge，必须在任何adapter导入之前导入nonebridge，需要同时注册两个Adapter才能正常运行   
