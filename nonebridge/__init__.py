@@ -1,6 +1,4 @@
-import importlib
 import json
-import traceback
 import inspect
 import time
 from typing import Any, List
@@ -8,6 +6,9 @@ from collections.abc import Callable
 import nonebot.message
 from nonebot.adapters import Bot, Event, Adapter
 from nonebot.drivers import Driver
+from nonebot.message import run_preprocessor
+from nonebot.matcher import Matcher
+from nonebot.exception import IgnoredException
 
 loaded_adapter_names: List = []
 loaded_adapter: List = []
@@ -43,6 +44,14 @@ try:
     loaded_adapter_names.append("Onebot11")
 except:
     print("Failed to load nonebot.adapters.telegram.adapter, please ensure nonebot-adapter-onebot installed")
+
+
+@run_preprocessor
+async def before_run_matcher(matcher: Matcher, bot: Bot, event: Event):
+    if not matcher.__class__ in bot._alread_run_matcher:
+        bot._alread_run_matcher.append(matcher.__class__)
+    else:
+        raise IgnoredException("Matcher has already been run")
 
 
 def get_adapter(name: str) -> Adapter:
@@ -130,8 +139,10 @@ class NonebotHooks:
                         if adapter := get_adapter("OneBot V11"):
                             ob11_bot = Ob11Bot(adapter, "0")
                             ob11_bot.raw_event = event  # pass origin event to make adapter process easily
+                            ob11_bot._alread_run_matcher = []
                             await nonebot.message.handle_event(ob11_bot, ob11_event)
-        return await origin_func(bot, event)
+                            bot._alread_run_matcher = ob11_bot._alread_run_matcher
+        await origin_func(bot, event)
 
 
 class TgHooks:
