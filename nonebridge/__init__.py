@@ -49,8 +49,7 @@ def Ob11Message2Tg(ob_message:Ob11Message) -> TgMessage:
         if msg_seg.type == "text":
             tg_msg_seg_list.append(TgMessageSegment.text(msg_seg.data["text"]))
         elif msg_seg.type == "image":
-            # Todo
-            pass
+            tg_msg_seg_list.append(TgMessageSegment.photo(msg_seg.data["file"]))
     if len(tg_msg_seg_list) > 0:
         return TgMessage(tg_msg_seg_list)
     else:
@@ -111,6 +110,7 @@ class NonebotHooks:
                         for adapter in loaded_adapter:
                             if(adapter.get_name() == "OneBot V11"):
                                 ob11_bot = Ob11Bot(adapter,"0")
+                                ob11_bot.raw_event = event #pass origin event to make adapter process easily
                                 await nonebot.message.handle_event(ob11_bot,ob11_event)
         return await origin_func(bot, event)
 
@@ -143,12 +143,14 @@ class Ob11Hooks:
                     for adapter in loaded_adapter:
                         if adapter.get_name() == "Telegram":
                             tg_bot = TgBot(adapter,"nonebridge")
-                            await tg_bot.call_api("sendMessage",chat_id = data["group_id"],text = data["message"].extract_plain_text())
+                            if hasattr(self,"raw_event"):
+                                await tg_bot._process_send_message(self.raw_event,Ob11Message2Tg(data["message"]),False,False)
                             return
             elif api == "get_group_member_info":
                 for adapter in loaded_adapter:
                     if adapter.get_name() == "Telegram":
                         tg_bot = TgBot(adapter,"nonebridge")
+                        
                         member = await tg_bot.call_api("getChatMember",chat_id = data["group_id"],user_id = data["user_id"]) 
                         return json.loads(json.dumps( {
                             "nickname": member["user"]["first_name"],
