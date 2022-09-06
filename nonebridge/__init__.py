@@ -48,10 +48,11 @@ except:
 
 @run_preprocessor
 async def before_run_matcher(matcher: Matcher, bot: Bot, event: Event):
-    if not matcher.__class__ in bot._alread_run_matcher:
-        bot._alread_run_matcher.append(matcher.__class__)
-    else:
-        raise IgnoredException("Matcher has already been run")
+    if hasattr(bot,"_alread_run_matcher") and isinstance(bot._alread_run_matcher,List):
+        if not matcher.__class__ in bot._alread_run_matcher:
+            bot._alread_run_matcher.append(matcher.__class__)
+        else:
+            raise IgnoredException("Matcher has already been run")
 
 
 def get_adapter(name: str) -> Adapter:
