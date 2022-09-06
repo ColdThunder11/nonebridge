@@ -69,6 +69,8 @@ def Ob11Message2Tg(ob_message: Ob11Message) -> TgMessage:
         elif msg_seg.type == "image":
             tg_msg_seg_list.append(
                 TgMessageSegment.photo(msg_seg.data["file"]))
+        elif msg_seg.type == "at":
+            tg_msg_seg_list.append(TgMessageSegment.at(msg_seg.data["qq"]))
     if len(tg_msg_seg_list) > 0:
         return TgMessage(tg_msg_seg_list)
     else:
@@ -81,6 +83,9 @@ def TgMessage2Ob11(tg_message: TgMessage) -> Ob11Message:
         if msg_seg.type == "text":
             ob11_msg_seg_list.append(
                 Ob11MessageSegment.text(msg_seg.data["text"]))
+        elif msg_seg.type == "at":
+            ob11_msg_seg_list.append(
+                Ob11MessageSegment.at(msg_seg.data["id"]))
         elif msg_seg.type == "photo":
             # Todo
             pass
@@ -107,7 +112,7 @@ def TgEvent2Ob11(tg_event: TgMessageEvent) -> Ob11MessageEvent:
         msg: Ob11Message = TgMessage2Ob11(tg_event.get_message())
         if not msg:
             return None
-        return Ob11PrivateMessageEvent(message=msg, group_id=tg_event.message.chat.id, user_id=tg_event.message.from_.id,
+        return Ob11PrivateMessageEvent(message=msg, user_id=tg_event.message.from_.id,
                                        self_id=0, message_id=tg_event.message.message_id, time=int(time.time()), post_type="message", sub_type="1",
                                        message_type="private", raw_message=msg.extract_plain_text(), font=0, sender=Ob11Sender.parse_obj(sender_json))
 
@@ -123,11 +128,21 @@ def check_in_in_hook(check_func_name: str = None):
                 return True
     return False
 
+def check_and_regist_bot_connection():
+    ob11_bridge_bot_exsist = False
+    if adapter := get_adapter("OneBot V11"):
+        for bot in nonebot.get_bots().values():
+            if isinstance(bot,Ob11Bot):
+                if bot.self_id == "0":
+                    ob11_bridge_bot_exsist  =True
+        if not ob11_bridge_bot_exsist:
+            adapter.bot_connect(Ob11Bot(adapter, "0"))
 
 class NonebotHooks:
 
     @staticmethod
     async def handle_event_hook(bot: "Bot", event: "Event", origin_func: Callable):
+        check_and_regist_bot_connection()
         if check_in_in_hook():
             return await origin_func(bot, event)
         if isinstance(bot, TgBot):
@@ -182,6 +197,24 @@ class Ob11Hooks:
                         if hasattr(self, "raw_event"):
                             await tg_bot._process_send_message(self.raw_event, Ob11Message2Tg(data["message"]), False, False)
                         return
+            elif api == "send_group_msg":
+                if adapter := get_adapter("Telegram"):
+                    tg_bot = TgBot(adapter, "nonebridge")
+                    event = TgMessageEvent.parse_obj({
+                        "update_id": -1,
+                        "user_id" : 0,
+                        "group_id": data["group_id"],
+                        "message":{
+                            "message_id": -1,
+                            "date": int(time.time()),
+                            "chat": {
+                                "id": data["group_id"],
+                                "type": "group",
+                            }
+                        }
+                    })
+                    await tg_bot._process_send_message(event, Ob11Message2Tg(data["message"]), False, False)
+                    return
             elif api == "get_group_info":
                 if adapter := get_adapter("Telegram"):
                     tg_bot = TgBot(adapter, "nonebridge")
@@ -231,7 +264,7 @@ class Ob11Hooks:
     @staticmethod
     def adapter_init(self, driver: Driver, origin_func: Callable, **kwargs: Any):
         loaded_adapter.append(self)
-        return origin_func(self, driver, **kwargs)
+        origin_func(self, driver, **kwargs)
 
 
 def install_hook(orig_func: Callable, hook_func: Callable):
