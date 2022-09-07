@@ -146,6 +146,8 @@ class NonebotHooks:
         check_and_regist_bot_connection()
         if check_in_in_hook():
             return await origin_func(bot, event)
+        bot._alread_run_matcher = []
+        await origin_func(bot, event)
         if isinstance(bot, TgBot):
             if "Onebot11" in loaded_adapter_names:
                 if isinstance(event, TgGroupMessageEvent) or isinstance(event, TgPrivateMessageEvent):
@@ -157,10 +159,6 @@ class NonebotHooks:
                             ob11_bot._alread_run_matcher = []
                             await nonebot.message.handle_event(ob11_bot, ob11_event)
                             bot._alread_run_matcher = ob11_bot._alread_run_matcher
-        await origin_func(bot, event)
-        if hasattr(bot, "_alread_run_matcher"):
-            bot._alread_run_matcher = []
-
 
 class TgHooks:
 
