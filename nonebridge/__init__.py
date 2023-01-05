@@ -48,7 +48,7 @@ except:
 
 @run_preprocessor
 async def before_run_matcher(matcher: Matcher, bot: Bot, event: Event):
-    if hasattr(bot,"_alread_run_matcher") and isinstance(bot._alread_run_matcher,List):
+    if hasattr(bot, "_alread_run_matcher") and isinstance(bot._alread_run_matcher, List):
         if not matcher.__class__ in bot._alread_run_matcher:
             bot._alread_run_matcher.append(matcher.__class__)
         else:
@@ -118,7 +118,7 @@ def TgEvent2Ob11(tg_event: TgMessageEvent) -> Ob11MessageEvent:
                                        message_type="private", raw_message=msg.extract_plain_text(), font=0, sender=Ob11Sender.parse_obj(sender_json))
 
 
-def check_in_in_hook(check_func_name: str = None):
+def check_in_hook(check_func_name: str = None):
     stack = inspect.stack()
     self_func_name = stack[1].function if not check_func_name else check_func_name
     call_count = 0
@@ -129,22 +129,24 @@ def check_in_in_hook(check_func_name: str = None):
                 return True
     return False
 
+
 def check_and_regist_bot_connection():
     ob11_bridge_bot_exsist = False
     if adapter := get_adapter("OneBot V11"):
         for bot in nonebot.get_bots().values():
-            if isinstance(bot,Ob11Bot):
+            if isinstance(bot, Ob11Bot):
                 if bot.self_id == "0":
-                    ob11_bridge_bot_exsist  =True
+                    ob11_bridge_bot_exsist = True
         if not ob11_bridge_bot_exsist:
             adapter.bot_connect(Ob11Bot(adapter, "0"))
+
 
 class NonebotHooks:
 
     @staticmethod
     async def handle_event_hook(bot: "Bot", event: "Event", origin_func: Callable):
         check_and_regist_bot_connection()
-        if check_in_in_hook():
+        if check_in_hook():
             return await origin_func(bot, event)
         bot._alread_run_matcher = []
         await origin_func(bot, event)
@@ -159,6 +161,7 @@ class NonebotHooks:
                             ob11_bot._alread_run_matcher = []
                             await nonebot.message.handle_event(ob11_bot, ob11_event)
                             bot._alread_run_matcher = ob11_bot._alread_run_matcher
+
 
 class TgHooks:
 
@@ -201,9 +204,9 @@ class Ob11Hooks:
                     tg_bot = TgBot(adapter, "nonebridge")
                     event = TgMessageEvent.parse_obj({
                         "update_id": -1,
-                        "user_id" : 0,
+                        "user_id": 0,
                         "group_id": data["group_id"],
-                        "message":{
+                        "message": {
                             "message_id": -1,
                             "date": int(time.time()),
                             "chat": {
