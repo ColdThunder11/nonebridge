@@ -6,12 +6,13 @@ A adapter event bridge for nonebot2 makes plugins running on different adapters 
 目前不支持~~主动发送消息和~~向非事件触发的聊天发送消息，支持主动向群聊使用send_group_msg发送群组消息了(必须在tg端收到任意消息后虚假的obv11 bot连接才会被注册)
 ## 支持的接收类型
 - [x] 纯文字(MessageSegment.text)
-- [x] 图片(MessageSegment.image) (需要nonebot-adapter-antelegram 0.2.0.dev10+)
+- [x] 图片(MessageSegment.image)
 
 ## 支持的发送类型
 - [x] 文字(MessageSegment.text)
 - [x] 图片(MessageSegment.image)
-- [x] AT(MessageSegment.at) (需要nonebot-adapter-antelegram 0.2.0.dev9+)
+- [x] AT(MessageSegment.at)
+- [x] 语音(MessageSegment.record)
 
 ## 支持的额外API
 | Onebot v11 API        | 对应的Telegarm API                                                       |
