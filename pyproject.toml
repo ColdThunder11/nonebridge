@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nonebridge"
-version = "0.1.0"
+version = "0.1.1"
 description = "A adapter event bridge for nonebot2 makes plugins run on different adapters without any modify"
 authors = ["ColdThunder11 <lslyj27761@gmail.com>"]
 license = "MIT"
