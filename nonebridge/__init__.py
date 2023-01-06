@@ -277,8 +277,8 @@ class Ob11Hooks:
                     return json.loads(json.dumps({
                         "group_id": data["group_id"],
                         "user_id": member["user"]["id"],
-                        "nickname": member["user"]["first_name"],
-                        "card": member["user"]["first_name"],
+                        "nickname": member["user"]["first_name"] if not "last_name" in member["user"] else member["user"]["first_name"] + member["user"]["last_name"],
+                        "card": member["user"]["first_name"] if not "last_name" in member["user"] else member["user"]["first_name"] + member["user"]["last_name"],
                         "sex": "unknown",
                         "role": "member"
                     }))
