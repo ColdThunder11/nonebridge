@@ -187,7 +187,10 @@ class NonebotHooks:
                             ob11_bot.raw_event = event  # pass origin event to make adapter process easily
                             ob11_bot._alread_run_matcher = bot._alread_run_matcher
                             await nonebot.message.handle_event(ob11_bot, ob11_event)
-        del bot._alread_run_matcher[event_id]
+        try:
+            del bot._alread_run_matcher[event_id]
+        except:
+            pass
 
 
 class TgHooks:
