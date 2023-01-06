@@ -19,7 +19,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.8.1"
 nonebot2 = "^2.0.0rc2"
-nonebot-adapter-antelegram = "^0.2.0-dev9"
+nonebot-adapter-antelegram = "^0.2.0-dev10"
 nonebot-adapter-onebot = "^2.2.0"
 
 
