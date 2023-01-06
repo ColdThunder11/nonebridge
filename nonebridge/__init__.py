@@ -1,8 +1,9 @@
 import json
 import inspect
 import time
-from typing import Any, List
+from typing import Any, Dict, List
 from collections.abc import Callable
+import nonebot
 import nonebot.message
 from nonebot.adapters import Bot, Event, Adapter
 from nonebot.drivers import Driver
@@ -48,9 +49,11 @@ except:
 
 @run_preprocessor
 async def before_run_matcher(matcher: Matcher, bot: Bot, event: Event):
-    if hasattr(bot, "_alread_run_matcher") and isinstance(bot._alread_run_matcher, List):
-        if not matcher.__class__ in bot._alread_run_matcher:
-            bot._alread_run_matcher.append(matcher.__class__)
+    if hasattr(bot, "_alread_run_matcher") and isinstance(bot._alread_run_matcher, Dict):
+        event_id = id(event) if not hasattr(
+            bot, "raw_event") else id(event.raw_event)
+        if not matcher.__class__ in bot._alread_run_matcher[event_id]:
+            bot._alread_run_matcher[event_id].append(matcher.__class__)
         else:
             raise IgnoredException("Matcher has already been run")
 
@@ -88,9 +91,19 @@ def TgMessage2Ob11(tg_message: TgMessage) -> Ob11Message:
             ob11_msg_seg_list.append(
                 Ob11MessageSegment.at(msg_seg.data["id"]))
         elif msg_seg.type == "photo":
-            # Todo
-            pass
-            # ob11_msg_seg_list.append(Ob11MessageSegment.image(msg_seg.data["text"]))
+            driver = nonebot.get_driver()
+            try:
+                ahead_caption = driver.config.nonebridge_ob11_caption_ahead_photo
+            except:
+                ahead_caption = True
+            image_ms = Ob11MessageSegment.image(file=msg_seg.data["photo"])
+            media_url = get_adapter("Telegram").media_server_url
+            image_ms.data["url"] = f"{media_url}?file_id={msg_seg.data['photo']}"
+            if "caption" in msg_seg.data and ahead_caption:
+                ob11_msg_seg_list.append(Ob11MessageSegment.text(msg_seg.data["caption"]))
+            ob11_msg_seg_list.append(image_ms)
+            if "caption" in msg_seg.data and not ahead_caption:
+                ob11_msg_seg_list.append(Ob11MessageSegment.text(msg_seg.data["caption"]))
     if len(ob11_msg_seg_list) > 0:
         return Ob11Message(ob11_msg_seg_list)
     else:
@@ -148,7 +161,10 @@ class NonebotHooks:
         check_and_regist_bot_connection()
         if check_in_hook():
             return await origin_func(bot, event)
-        bot._alread_run_matcher = []
+        if not hasattr(bot, "_alread_run_matcher"):
+            bot._alread_run_matcher = {}
+        event_id = id(event)
+        bot._alread_run_matcher[event_id] = []
         await origin_func(bot, event)
         if isinstance(bot, TgBot):
             if "Onebot11" in loaded_adapter_names:
@@ -158,9 +174,9 @@ class NonebotHooks:
                         if adapter := get_adapter("OneBot V11"):
                             ob11_bot = Ob11Bot(adapter, "0")
                             ob11_bot.raw_event = event  # pass origin event to make adapter process easily
-                            ob11_bot._alread_run_matcher = []
+                            ob11_bot._alread_run_matcher = bot._alread_run_matcher
                             await nonebot.message.handle_event(ob11_bot, ob11_event)
-                            bot._alread_run_matcher = ob11_bot._alread_run_matcher
+        del bot._alread_run_matcher[event_id]
 
 
 class TgHooks:

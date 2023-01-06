@@ -6,7 +6,7 @@ A adapter event bridge for nonebot2 makes plugins run at different adapter witho
 目前不支持~~主动发送消息和~~向非事件触发的聊天发送消息，支持主动向群聊使用send_group_msg发送群组消息了(必须在tg端收到任意消息后虚假的obv11 bot连接才会被注册)
 ## 支持的接收类型
 - [x] 纯文字(MessageSegment.text)
-- [ ] 图片
+- [x] 图片(MessageSegment.image) (需要nonebot-adapter-antelegram 0.2.0.dev10+)
 
 ## 支持的发送类型
 - [x] 文字(MessageSegment.text)
@@ -20,6 +20,11 @@ A adapter event bridge for nonebot2 makes plugins run at different adapter witho
 | get_group_member_list | getChatAdministrators(由于tg并没有提供相关API，仅能够直接获取管理员信息) |
 | get_group_member_info | getChatMember                                                            |
 | send_group_msg        | ---                                                                      |
+## 配置
+nonebridge所需的配置直接写入到nonebot2的.env文件内即可
+```
+nonebridge_ob11_caption_ahead_photo: 将从telegram收到的带文字描述的图片消息中文字部分作为文字消息在ob11的消息段中前置以配合ob11中大部分插件的习惯写法，默认为True
+```
 
 ## 使用方法
 同时安装并两个adapter，在bot.py紧随nonebot之后导入nonebridge，必须在任何adapter导入之前导入nonebridge，需要同时注册两个Adapter才能正常运行   
