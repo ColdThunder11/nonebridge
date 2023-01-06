@@ -82,6 +82,8 @@ def Ob11Message2Tg(ob_message: Ob11Message) -> TgMessage:
                 TgMessageSegment.photo(msg_seg.data["file"]))
         elif msg_seg.type == "at":
             tg_msg_seg_list.append(TgMessageSegment.at(msg_seg.data["qq"]))
+        elif msg_seg.type == "record":
+            tg_msg_seg_list.append(TgMessageSegment.audio(msg_seg.data["file"]))
     if len(tg_msg_seg_list) > 0:
         return TgMessage(tg_msg_seg_list)
     else:
