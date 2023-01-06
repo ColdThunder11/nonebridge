@@ -65,12 +65,14 @@ def get_adapter(name: str) -> Adapter:
             return adapter
     return None
 
-def has_attr_in_bot(bot,name:str) -> bool:
-    attr = getattr(bot,name)
-    if isinstance(attr,partial):
+
+def has_attr_in_bot(bot, name: str) -> bool:
+    attr = getattr(bot, name)
+    if isinstance(attr, partial):
         return False
     else:
         return True
+
 
 def Ob11Message2Tg(ob_message: Ob11Message) -> TgMessage:
     tg_msg_seg_list = []
@@ -83,7 +85,8 @@ def Ob11Message2Tg(ob_message: Ob11Message) -> TgMessage:
         elif msg_seg.type == "at":
             tg_msg_seg_list.append(TgMessageSegment.at(msg_seg.data["qq"]))
         elif msg_seg.type == "record":
-            tg_msg_seg_list.append(TgMessageSegment.audio(msg_seg.data["file"]))
+            tg_msg_seg_list.append(
+                TgMessageSegment.audio(msg_seg.data["file"]))
     if len(tg_msg_seg_list) > 0:
         return TgMessage(tg_msg_seg_list)
     else:
@@ -105,14 +108,17 @@ def TgMessage2Ob11(tg_message: TgMessage) -> Ob11Message:
                 ahead_caption = driver.config.nonebridge_ob11_caption_ahead_photo
             except:
                 ahead_caption = True
-            image_ms = Ob11MessageSegment.image(file=msg_seg.data["photo"],cache=False,proxy=False)
+            image_ms = Ob11MessageSegment.image(
+                file=msg_seg.data["photo"], cache=False, proxy=False)
             media_url = get_adapter("Telegram").media_server_url
             image_ms.data["url"] = f"{media_url}?file_id={msg_seg.data['photo']}"
             if "caption" in msg_seg.data and ahead_caption:
-                ob11_msg_seg_list.append(Ob11MessageSegment.text(msg_seg.data["caption"]))
+                ob11_msg_seg_list.append(
+                    Ob11MessageSegment.text(msg_seg.data["caption"]))
             ob11_msg_seg_list.append(image_ms)
             if "caption" in msg_seg.data and not ahead_caption:
-                ob11_msg_seg_list.append(Ob11MessageSegment.text(msg_seg.data["caption"]))
+                ob11_msg_seg_list.append(
+                    Ob11MessageSegment.text(msg_seg.data["caption"]))
     if len(ob11_msg_seg_list) > 0:
         return Ob11Message(ob11_msg_seg_list)
     else:
@@ -130,14 +136,14 @@ def TgEvent2Ob11(tg_event: TgMessageEvent) -> Ob11MessageEvent:
             return None
         return Ob11GroupMessageEvent(message=msg, group_id=tg_event.message.chat.id, user_id=tg_event.message.from_.id,
                                      self_id=0, message_id=tg_event.message.message_id, time=int(time.time()), post_type="message", sub_type="1",
-                                     message_type="group", raw_message=msg.extract_plain_text(), font=0, sender=Ob11Sender.parse_obj(sender_json))
+                                     message_type="group", raw_message=msg.extract_plain_text(), font=0, sender=Ob11Sender.parse_obj(sender_json), to_me=tg_event.to_me)
     elif isinstance(tg_event, TgPrivateMessageEvent):
         msg: Ob11Message = TgMessage2Ob11(tg_event.get_message())
         if not msg:
             return None
         return Ob11PrivateMessageEvent(message=msg, user_id=tg_event.message.from_.id,
                                        self_id=0, message_id=tg_event.message.message_id, time=int(time.time()), post_type="message", sub_type="1",
-                                       message_type="private", raw_message=msg.extract_plain_text(), font=0, sender=Ob11Sender.parse_obj(sender_json))
+                                       message_type="private", raw_message=msg.extract_plain_text(), font=0, sender=Ob11Sender.parse_obj(sender_json), to_me=tg_event.to_me)
 
 
 def check_in_hook(check_func_name: str = None):
@@ -171,7 +177,7 @@ class NonebotHooks:
         if check_in_hook():
             return await origin_func(bot, event)
         # since nonebot2's rewrite of __getattr__ , hasattr can not work as expected
-        if not has_attr_in_bot(bot, "_alread_run_matcher"): 
+        if not has_attr_in_bot(bot, "_alread_run_matcher"):
             bot._alread_run_matcher = {}
         bot._alread_run_matcher = {}
         event_id = id(event)
@@ -188,6 +194,7 @@ class NonebotHooks:
                             ob11_bot._alread_run_matcher = bot._alread_run_matcher
                             await nonebot.message.handle_event(ob11_bot, ob11_event)
         try:
+            # To Fix： 由于事件处理过程可能有意外退出？需要更详细问题
             del bot._alread_run_matcher[event_id]
         except:
             pass
