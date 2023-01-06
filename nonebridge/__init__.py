@@ -3,6 +3,7 @@ import inspect
 import time
 from typing import Any, Dict, List
 from collections.abc import Callable
+from functools import partial
 import nonebot
 import nonebot.message
 from nonebot.adapters import Bot, Event, Adapter
@@ -49,9 +50,9 @@ except:
 
 @run_preprocessor
 async def before_run_matcher(matcher: Matcher, bot: Bot, event: Event):
-    if hasattr(bot, "_alread_run_matcher") and isinstance(bot._alread_run_matcher, Dict):
-        event_id = id(event) if not hasattr(
-            bot, "raw_event") else id(event.raw_event)
+    if has_attr_in_bot(bot, "_alread_run_matcher") and isinstance(bot._alread_run_matcher, Dict):
+        event_id = id(event) if not has_attr_in_bot(
+            bot, "raw_event") else id(bot.raw_event)
         if not matcher.__class__ in bot._alread_run_matcher[event_id]:
             bot._alread_run_matcher[event_id].append(matcher.__class__)
         else:
@@ -64,6 +65,12 @@ def get_adapter(name: str) -> Adapter:
             return adapter
     return None
 
+def has_attr_in_bot(bot,name:str) -> bool:
+    attr = getattr(bot,name)
+    if isinstance(attr,partial):
+        return False
+    else:
+        return True
 
 def Ob11Message2Tg(ob_message: Ob11Message) -> TgMessage:
     tg_msg_seg_list = []
@@ -96,7 +103,7 @@ def TgMessage2Ob11(tg_message: TgMessage) -> Ob11Message:
                 ahead_caption = driver.config.nonebridge_ob11_caption_ahead_photo
             except:
                 ahead_caption = True
-            image_ms = Ob11MessageSegment.image(file=msg_seg.data["photo"])
+            image_ms = Ob11MessageSegment.image(file=msg_seg.data["photo"],cache=False,proxy=False)
             media_url = get_adapter("Telegram").media_server_url
             image_ms.data["url"] = f"{media_url}?file_id={msg_seg.data['photo']}"
             if "caption" in msg_seg.data and ahead_caption:
@@ -161,8 +168,10 @@ class NonebotHooks:
         check_and_regist_bot_connection()
         if check_in_hook():
             return await origin_func(bot, event)
-        if not hasattr(bot, "_alread_run_matcher"):
+        # since nonebot2's rewrite of __getattr__ , hasattr can not work as expected
+        if not has_attr_in_bot(bot, "_alread_run_matcher"): 
             bot._alread_run_matcher = {}
+        bot._alread_run_matcher = {}
         event_id = id(event)
         bot._alread_run_matcher[event_id] = []
         await origin_func(bot, event)
@@ -206,13 +215,13 @@ class Ob11Hooks:
                 if data["message_type"] == "group":
                     if adapter := get_adapter("Telegram"):
                         tg_bot = TgBot(adapter, "nonebridge")
-                        if hasattr(self, "raw_event"):
+                        if has_attr_in_bot(self, "raw_event"):
                             await tg_bot._process_send_message(self.raw_event, Ob11Message2Tg(data["message"]), False, False)
                         return
                 elif data["message_type"] == "private":
                     if adapter := get_adapter("Telegram"):
                         tg_bot = TgBot(adapter, "nonebridge")
-                        if hasattr(self, "raw_event"):
+                        if has_attr_in_bot(self, "raw_event"):
                             await tg_bot._process_send_message(self.raw_event, Ob11Message2Tg(data["message"]), False, False)
                         return
             elif api == "send_group_msg":
@@ -236,7 +245,7 @@ class Ob11Hooks:
             elif api == "get_group_info":
                 if adapter := get_adapter("Telegram"):
                     tg_bot = TgBot(adapter, "nonebridge")
-                    if hasattr(self, "raw_event"):
+                    if has_attr_in_bot(self, "raw_event"):
                         tg_chat_info = await tg_bot.call_api("getChat", chat_id=data["group_id"])
                         return json.loads(json.dumps({
                             "group_id": tg_chat_info["id"],
@@ -247,7 +256,7 @@ class Ob11Hooks:
             elif api == "get_group_member_list":  # Telegram only offer API to get admins of group, it seems no way to get other member's info unless record chat history
                 if adapter := get_adapter("Telegram"):
                     tg_bot = TgBot(adapter, "nonebridge")
-                    if hasattr(self, "raw_event"):
+                    if has_attr_in_bot(self, "raw_event"):
                         tg_group_admins_info = await tg_bot.call_api("getChatAdministrators", chat_id=data["group_id"])
                         member_list = []
                         for admin_info in tg_group_admins_info:
