@@ -1,5 +1,5 @@
 # nonebridge
-A adapter event bridge for nonebot2 makes plugins run at different adapter without any modify   
+A adapter event bridge for nonebot2 makes plugins running on different adapters without any modify   
 一个让你能够在不修改插件的情况下使其运行在不同adapter中的魔法bridge，开发目的是为了给[Yuki Clanbattle](https://github.com/ColdThunder11/yuki_clanbattle)提供Telegram支持
 ## 还在开发中请勿生产环境使用
 女生自用插件，目前仅支持让为onebotv11编写的插件运行在自己写的[nonebot-adapter-telegram](https://github.com/ColdThunder11/nonebot-adapter-telegram)上，仅会支持有限的消息类型和API模拟   

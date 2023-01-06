@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "nonebridge"
+version = "0.1.0"
+description = "A adapter event bridge for nonebot2 makes plugins run on different adapters without any modify"
+authors = ["ColdThunder11 <lslyj27761@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/ColdThunder11/nonebot-adapter-telegram"
+packages = [
+  { include = "nonebridge" }
+]
+keywords = ["bot"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+]
+
+[tool.poetry.dependencies]
+python = "^3.8.1"
+nonebot2 = "^2.0.0rc2"
+nonebot-adapter-antelegram = "^0.2.0-dev9"
+nonebot-adapter-onebot = "^2.2.0"
+
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
