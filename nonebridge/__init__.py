@@ -1,6 +1,8 @@
 import json
 import inspect
+import traceback
 import time
+import asyncio
 from typing import Any, Dict, List
 from collections.abc import Callable
 from functools import partial
@@ -46,6 +48,71 @@ try:
     loaded_adapter_names.append("Onebot11")
 except:
     print("Failed to load nonebot.adapters.telegram.adapter, please ensure nonebot-adapter-onebot installed")
+
+
+import httpx
+
+async def httpx_async_client_get_func_hook(*a, **b):
+    origin_func = b["origin_func"]
+    b.pop("origin_func")
+    # 寄，玩不明白怎么拿调用堆栈了，开摆
+    # perform_hook = False
+    # # limited hook for warped with asyncio, special for nonebot-plugin-petpet
+    # asyncio_task = asyncio.current_task()
+    # if "bot" in asyncio_task._coro.cr_frame.f_locals:
+    #     bot : Ob11Bot = asyncio_task._coro.cr_frame.f_locals["bot"] #get bot
+    #     if isinstance(bot,Ob11Bot) and bot.self_id == "0": # check is converted bot
+    #         perform_hook = True
+    # #stack = inspect.stack()
+    # # serach _check_matcher for those directly call async httpx
+    # for frame in inspect.stack():
+    #      if frame.function == "_check_matcher":
+    #         bot : Ob11Bot = frame[0].f_locals["bot"] #get bot
+    #         if isinstance(bot,Ob11Bot) and bot.self_id == "0": # check is converted bot
+    #             perform_hook = True
+    #             break
+    driver = nonebot.get_driver()
+    try:
+        perform_hook = driver.config.nonebridge_httpx_hook
+    except:
+        perform_hook = False
+    if not perform_hook:
+        return await origin_func(*a, **b)
+    if "url" in b:
+        url = b ["url"]
+    else:
+        url = a[1]
+    prased_url = httpx.URL(url)
+    if prased_url.host == "q1.qlogo.cn" and prased_url.params.get("b") == "qq":
+        # QQ头像请求hook
+        user_id = prased_url.params.get("nk")
+        tg_bot = TgBot(get_adapter("Telegram"), "nonebridge")
+        result = await tg_bot.call_api("getUserProfilePhotos",user_id=user_id,limit=1)
+        if result["total_count"] > 0:
+            def get_max_size_file(file_list: List) -> Any:
+                max_index = 0
+                for i in range(len(file_list)):
+                    if file_list[i]["file_size"] > file_list[max_index]["file_size"]:
+                        max_index = i
+                return file_list[max_index]
+            max_size_file = get_max_size_file(result["photos"][0])
+            file_id = max_size_file["file_id"]
+            media_url = get_adapter("Telegram").media_server_url
+            avatar_url = f"{media_url}?file_id={file_id}"
+            if "url" in b:
+                b["url"] = avatar_url
+            else:
+                a_list = list(a)
+                a_list[1] = avatar_url
+                a  = tuple(a_list)
+    return await origin_func(*a, **b)
+
+
+async def httpx_async_client_get_func_async(*a, **b):
+    b["origin_func"] = orig_httpx_async_client_get_func
+    return await httpx_async_client_get_func_hook(*a, **b)
+orig_httpx_async_client_get_func = httpx.AsyncClient.get
+httpx.AsyncClient.get = httpx_async_client_get_func_async
 
 
 @run_preprocessor
