@@ -361,6 +361,19 @@ class Ob11Hooks:
                         "sex": "unknown",
                         "role": "member"
                     }))
+            # elif api == "get_stranger_info":
+            #     if adapter := get_adapter("Telegram"):
+            #         tg_bot = TgBot(adapter, "nonebridge")
+            #         member = await tg_bot.call_api("getChatMember", chat_id=data["group_id"], user_id=data["user_id"])
+            #         return json.loads(json.dumps({
+            #             "user_id": member["user"]["id"],
+            #             "nickname": member["user"]["first_name"] if not "last_name" in member["user"] else member["user"]["first_name"] + member["user"]["last_name"],
+            #             "sex": "unknown",
+            #             "age": 114514,
+            #             "qid": None,
+            #             "level": 114514,
+            #             "login_days": 114514
+            #         }))
         return await origin_func(self, api, **data)
 
     @staticmethod
