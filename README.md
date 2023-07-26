@@ -26,6 +26,7 @@ nonebridge所需的配置直接写入到nonebot2的.env文件内即可
 ```
 nonebridge_ob11_caption_ahead_photo: 将从telegram收到的带文字描述的图片消息中文字部分作为文字消息在ob11的消息段中前置以配合ob11中大部分插件的习惯写法，默认为True
 nonebridge_httpx_hook: 安装httpx钩子以拦截获取qq头像的http api，默认为False
+ob11_plugin_list: [] 需要强制处理为ob11消息的插件，该插件内的matcer将不会被tg消息触发
 ```
 
 ## 使用方法

@@ -55,6 +55,12 @@ import httpx
 async def httpx_async_client_get_func_hook(*a, **b):
     origin_func = b["origin_func"]
     b.pop("origin_func")
+    # try:
+    #     raise Exception("")
+    # except Exception as e:
+    #     print(e)
+    #     pass
+        
     # 寄，玩不明白怎么拿调用堆栈了，开摆
     # perform_hook = False
     # # limited hook for warped with asyncio, special for nonebot-plugin-petpet
@@ -117,6 +123,13 @@ httpx.AsyncClient.get = httpx_async_client_get_func_async
 
 @run_preprocessor
 async def before_run_matcher(matcher: Matcher, bot: Bot, event: Event):
+    driver = nonebot.get_driver()
+    try:
+        ob11_plugin_list = driver.config.ob11_plugin_list
+    except:
+        ob11_plugin_list = []
+    if bot.adapter.get_name() == "Telegram" and matcher.plugin_name in ob11_plugin_list:
+        raise IgnoredException("Matcher target in ob11, ignore")
     if has_attr_in_bot(bot, "_alread_run_matcher") and isinstance(bot._alread_run_matcher, Dict):
         event_id = id(event) if not has_attr_in_bot(
             bot, "raw_event") else id(bot.raw_event)
